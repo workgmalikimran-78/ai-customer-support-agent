@@ -1,0 +1,19 @@
+.canvasWrap {
+  position: relative;
+  height: 560px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-alt);
+  overflow: hidden;
+}
+
+.toolbar {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  z-index: 10;
+}
+
+.canvasWrap :global(.react-flow__attribution) {
+  display: none;
+}

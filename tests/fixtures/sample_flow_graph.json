@@ -1,0 +1,120 @@
+{
+  "startNodeId": "welcome",
+  "nodes": [
+    {
+      "id": "welcome",
+      "type": "welcomeMessage",
+      "position": { "x": 0, "y": 0 },
+      "data": {
+        "label": "Welcome",
+        "config": {
+          "type": "welcomeMessage",
+          "text": "Hi! Welcome to support. How can I help you today?"
+        }
+      }
+    },
+    {
+      "id": "classify",
+      "type": "intentClassification",
+      "position": { "x": 200, "y": 0 },
+      "data": {
+        "label": "Classify Intent",
+        "config": {
+          "type": "intentClassification",
+          "intents": ["sales_inquiry", "technical_support"]
+        }
+      }
+    },
+    {
+      "id": "sales_text",
+      "type": "textBlock",
+      "position": { "x": 400, "y": -100 },
+      "data": {
+        "label": "Sales Info",
+        "config": {
+          "type": "textBlock",
+          "text": "Our sales team offers flexible plans starting at $29/month."
+        }
+      }
+    },
+    {
+      "id": "tech_api",
+      "type": "apiCall",
+      "position": { "x": 400, "y": 100 },
+      "data": {
+        "label": "Check System Status",
+        "config": {
+          "type": "apiCall",
+          "url": "https://example.invalid/api/status",
+          "method": "GET",
+          "timeoutSeconds": 2.0
+        }
+      }
+    },
+    {
+      "id": "quick_replies",
+      "type": "quickReplies",
+      "position": { "x": 600, "y": 0 },
+      "data": {
+        "label": "Anything else?",
+        "config": {
+          "type": "quickReplies",
+          "text": "Did that answer your question?",
+          "options": ["Yes", "No, I need a human"]
+        }
+      }
+    },
+    {
+      "id": "agent",
+      "type": "directToAgent",
+      "position": { "x": 800, "y": 0 },
+      "data": {
+        "label": "Escalate",
+        "config": {
+          "type": "directToAgent",
+          "reason": "Customer requested a human agent."
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-welcome-classify",
+      "source": "welcome",
+      "target": "classify"
+    },
+    {
+      "id": "e-classify-sales",
+      "source": "classify",
+      "target": "sales_text",
+      "condition": { "intent": "sales_inquiry" }
+    },
+    {
+      "id": "e-classify-tech",
+      "source": "classify",
+      "target": "tech_api",
+      "condition": { "intent": "technical_support" }
+    },
+    {
+      "id": "e-sales-quickreplies",
+      "source": "sales_text",
+      "target": "quick_replies"
+    },
+    {
+      "id": "e-tech-quickreplies",
+      "source": "tech_api",
+      "target": "quick_replies"
+    },
+    {
+      "id": "e-quickreplies-agent",
+      "source": "quick_replies",
+      "target": "agent",
+      "condition": { "quickReply": "No, I need a human" }
+    },
+    {
+      "id": "e-quickreplies-default",
+      "source": "quick_replies",
+      "target": "welcome"
+    }
+  ]
+}

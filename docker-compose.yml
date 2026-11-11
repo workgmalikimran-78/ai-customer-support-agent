@@ -1,0 +1,135 @@
+name: ai-customer-support-agent
+
+networks:
+  support-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  chroma_data:
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-support_platform}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - support-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-support_platform}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  chroma:
+    image: chromadb/chroma:latest
+    volumes:
+      - chroma_data:/chroma/chroma
+    # No published port: only ai-service (on support-net) needs to reach Chroma.
+    # chromadb has open CVEs with no fix version as of this writing (see
+    # docs/security-notes.md) -- don't widen its exposure beyond the internal
+    # network. For local debugging, temporarily add `ports: ["8001:8000"]` back.
+    networks:
+      - support-net
+    healthcheck:
+      # chromadb/chroma's image has no curl, wget, python3, or nc -- confirmed
+      # via `docker exec ... which ...` (it's a minimal Debian image with only
+      # coreutils/bash/perl). bash's own /dev/tcp pseudo-device needs nothing
+      # external: it just confirms something is listening on 8000.
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8000' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - support-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  ai-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LLM_MODEL_ID: ${LLM_MODEL_ID:-claude-sonnet-4-6}
+      CHROMA_URL: http://chroma:8000
+      REDIS_URL: redis://redis:6379
+      AI_SERVICE_API_KEY: ${AI_SERVICE_API_KEY:-dev-shared-secret}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173,http://localhost:8080}
+    ports:
+      - "8000:8000"
+    depends_on:
+      chroma:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - support-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-support_platform}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      AI_SERVICE_BASE_URL: http://ai-service:8000
+      AI_SERVICE_API_KEY: ${AI_SERVICE_API_KEY:-dev-shared-secret}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me}
+      WEBHOOK_SHARED_SECRET: ${WEBHOOK_SHARED_SECRET:-dev-webhook-secret-change-me}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      REQUIRE_STRONG_SECRETS: ${REQUIRE_STRONG_SECRETS:-false}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+    networks:
+      - support-net
+    healthcheck:
+      # backend's runtime image is eclipse-temurin:21-jre-alpine -- Alpine has
+      # no curl by default, only BusyBox's wget (same class of bug hit earlier
+      # with the chroma healthcheck).
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+        VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:8080}
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - support-net

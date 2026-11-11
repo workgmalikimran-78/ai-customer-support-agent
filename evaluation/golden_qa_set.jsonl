@@ -1,0 +1,15 @@
+{"query": "I want to know about pricing and subscription plans", "expected_intent": "sales_inquiry", "expected_keywords": ["price", "pricing", "plan", "subscription", "cost"]}
+{"query": "Can you tell me about your enterprise plan pricing?", "expected_intent": "sales_inquiry", "expected_keywords": ["enterprise", "plan", "pricing"]}
+{"query": "I'd like to upgrade my current plan, what are my options?", "expected_intent": "sales_inquiry", "expected_keywords": ["upgrade", "plan", "options"]}
+{"query": "What's the cost difference between the basic and premium tiers?", "expected_intent": "sales_inquiry", "expected_keywords": ["cost", "basic", "premium", "tier"]}
+{"query": "The app keeps crashing every time I try to log in", "expected_intent": "technical_support", "expected_keywords": ["crash", "login", "error", "bug"]}
+{"query": "I'm getting an error message when I try to upload a file", "expected_intent": "technical_support", "expected_keywords": ["error", "upload", "file", "bug"]}
+{"query": "The dashboard is not loading properly on my browser", "expected_intent": "technical_support", "expected_keywords": ["dashboard", "loading", "browser", "issue"]}
+{"query": "How do I install the integration with my CRM?", "expected_intent": "technical_support", "expected_keywords": ["install", "integration", "crm", "technical"]}
+{"query": "I want a refund for my last purchase, it didn't work as expected", "expected_intent": "refund_request", "expected_keywords": ["refund", "purchase", "money back"]}
+{"query": "Please cancel my subscription and give me my money back", "expected_intent": "refund_request", "expected_keywords": ["cancel", "subscription", "refund", "money back"]}
+{"query": "I was charged twice this month, can I get a refund for the duplicate charge?", "expected_intent": "refund_request", "expected_keywords": ["charged", "refund", "duplicate", "charge"]}
+{"query": "Why was my card charged more than expected on this invoice?", "expected_intent": "billing", "expected_keywords": ["charged", "invoice", "billing", "payment"]}
+{"query": "I can't log into my account, it says my password is wrong", "expected_intent": "account_issue", "expected_keywords": ["login", "account", "password", "locked"]}
+{"query": "My account got locked after too many failed login attempts", "expected_intent": "account_issue", "expected_keywords": ["account", "locked", "login"]}
+{"query": "How do I reset my password for my account?", "expected_intent": "account_issue", "expected_keywords": ["password", "reset", "account"]}
