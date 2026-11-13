@@ -8,7 +8,7 @@ export function useTeamMembers() {
 
   return useQuery({
     queryKey: ['team-members', teamId],
-    queryFn: () => fetchTeamMembers(teamId),
+    queryFn: () => fetchTeamMembers(),
     staleTime: 30_000,
   });
 }
@@ -18,7 +18,7 @@ export function useInviteTeamMember() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: { email: string; role: TeamRole }) => inviteTeamMember(teamId, input),
+    mutationFn: (input: { email: string; role: TeamRole }) => inviteTeamMember(input),
     onSuccess: (newMember) => {
       queryClient.setQueryData<TeamMember[] | undefined>(['team-members', teamId], (prev) =>
         prev ? [...prev, newMember] : [newMember],

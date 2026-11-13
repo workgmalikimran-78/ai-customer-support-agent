@@ -4,7 +4,7 @@
 
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/api/auth/login` | `{email, password}` → `{accessToken, refreshToken, user}` |
+| POST | `/api/auth/login` | `{email, password}` → `{token, userId, email, displayName, role, teamId}`. `429` with a `Retry-After` header once `LoginRateLimiter`'s threshold is hit (see `docs/security-notes.md`). |
 | GET | `/api/conversations?status=&channel=&search=&page=` | → `{items: ConversationSummaryDto[], total, page}` |
 | GET | `/api/conversations/{id}/messages?before=&limit=` | → `{items: MessageDto[], hasMore}` |
 | POST | `/api/conversations/{id}/messages` | `{content, attachmentUrl?}` → `MessageDto` |

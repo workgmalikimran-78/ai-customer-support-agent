@@ -10,7 +10,8 @@ type Listener = (message: IMessage) => void;
  * Thin wrapper around a single shared STOMP client (over SockJS) for the
  * whole app. Designed to no-op gracefully when the backend isn't running:
  * connection errors are caught/logged rather than thrown, so pages using
- * `useInboxSocket` / `useLiveMetrics` keep rendering their (mock) data.
+ * `useInboxSocket` / `useLiveMetrics` keep rendering whatever REST already
+ * fetched instead of crashing when live updates aren't available.
  */
 class SocketClient {
   private client: Client | null = null;

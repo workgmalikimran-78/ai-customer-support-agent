@@ -16,7 +16,7 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
             select c from Conversation c
             where (:status is null or c.status = :status)
               and (:channelId is null or c.channelId = :channelId)
-              and (:search is null or lower(c.lastMessagePreview) like lower(concat('%', :search, '%')))
+              and (:search is null or lower(c.lastMessagePreview) like lower(concat('%', cast(:search as string), '%')))
             order by c.lastMessageAt desc nulls last
             """)
     Page<Conversation> search(@Param("status") ConversationStatus status,

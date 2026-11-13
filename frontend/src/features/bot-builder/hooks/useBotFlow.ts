@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchBotFlow, publishBotFlow, saveBotFlow } from '../api/botFlowApi';
-import { DEFAULT_FLOW_ID } from '../api/mockBotFlow';
+import { DEFAULT_FLOW_ID, fetchBotFlow, publishBotFlow, saveBotFlow } from '../api/botFlowApi';
 import { useFlowBuilderStore } from '../store/flowBuilderStore';
 import type { BotFlow, BotFlowEdge, BotFlowNode } from '../types/botFlow';
 import type { FlowCanvasEdge, FlowCanvasNode } from '../store/flowBuilderStore';
@@ -52,8 +51,7 @@ function toWireEdges(edges: FlowCanvasEdge[]): BotFlowEdge[] {
 /**
  * Loads a bot flow on mount into the Zustand `flowBuilderStore`, and
  * exposes `save`/`publish` actions that persist the current canvas state
- * through the `botFlowApi` layer (mock-backed today; swap to real
- * `GET/PUT/POST /api/bot-flows` calls is already wired in `botFlowApi.ts`).
+ * through `GET/PUT/POST /api/bot-flows` (see `botFlowApi.ts`).
  */
 export function useBotFlow(flowId: string = DEFAULT_FLOW_ID) {
   const queryClient = useQueryClient();

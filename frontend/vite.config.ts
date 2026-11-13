@@ -7,6 +7,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [react()],
+  // sockjs-client (used by @stomp/stompjs for the inbox/metrics WebSocket) references
+  // Node's `global`, which browsers don't have and Vite doesn't polyfill by default.
+  define: {
+    global: 'globalThis',
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),

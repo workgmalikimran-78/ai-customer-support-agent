@@ -17,7 +17,7 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
     @Query("""
             select m from Message m
             where m.conversationId = :conversationId
-              and (:before is null or m.createdAt < :before)
+              and m.createdAt < :before
             order by m.createdAt desc
             """)
     List<Message> findBefore(@Param("conversationId") UUID conversationId,

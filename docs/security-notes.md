@@ -29,6 +29,5 @@ Tracked findings that need a human decision or follow-up — not fixed by a code
 
 ## Known scope simplifications (not bugs — tracked intentionally)
 
-- **No rate-limiting on `/api/auth/login`** — no brute-force protection on password login as shipped.
 - **Single-tenant data model** — `Conversation`/`BotFlow`/etc. have no tenant/team ownership FK and no authorization check scoping a user to "their" data. Fine for the current one-seeded-team scaffold; must be addressed before this becomes a real multi-tenant product.
 - **Webhook channel adapters are stubbed** — `/api/webhooks/{channel}` normalizes WhatsApp/Facebook/WebChat identically and doesn't call any real provider API. The HMAC signature check (see `docs/api-contracts.md`) guards the endpoint itself, but if you wire up a real provider, you'll need their actual signing scheme (e.g. Meta's `X-Hub-Signature-256` keyed by the app secret) instead of the generic one here.

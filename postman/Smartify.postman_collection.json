@@ -1,0 +1,386 @@
+{
+  "info": {
+    "name": "Smartify AI Customer Support",
+    "description": "REST API for the Spring Boot backend (and AI service health check). Run \"Login\" first — it stores the JWT in the {{token}} collection variable, which every other request inherits as Bearer auth automatically. See docs/api-contracts.md for the full contract reference.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
+    { "key": "aiServiceBaseUrl", "value": "http://localhost:8000", "type": "string" },
+    { "key": "webhookSecret", "value": "dev-webhook-secret-change-me", "type": "string" },
+    { "key": "demoEmail", "value": "admin@smartify.demo", "type": "string" },
+    { "key": "demoPassword", "value": "password123", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "teamId", "value": "", "type": "string" },
+    { "key": "userId", "value": "", "type": "string" },
+    { "key": "conversationId", "value": "", "type": "string" },
+    { "key": "contactId", "value": "", "type": "string" },
+    { "key": "botFlowId", "value": "00000000-0000-0000-0000-000000000020", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{demoEmail}}\",\n  \"password\": \"{{demoPassword}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
+            "description": "Response: {token, userId, email, displayName, role, teamId}. 401 on bad credentials, 429 with Retry-After once LoginRateLimiter's threshold is hit (5 failures / 15 min by default)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    pm.collectionVariables.set('teamId', json.teamId);",
+                  "    pm.collectionVariables.set('userId', json.userId);",
+                  "    console.log('Stored token/teamId/userId collection variables.');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@smartify.demo\",\n  \"password\": \"password123\",\n  \"displayName\": \"New User\",\n  \"teamName\": \"New Team\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] },
+            "description": "Creates a brand new team + admin user. Response shape matches Login's (201)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Conversations",
+      "item": [
+        {
+          "name": "List Conversations",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/conversations?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "conversations"],
+              "query": [
+                { "key": "status", "value": "OPEN", "disabled": true, "description": "OPEN | PENDING | RESOLVED | ESCALATED" },
+                { "key": "channel", "value": "", "disabled": true, "description": "channel UUID" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            },
+            "description": "Response: {items: ConversationSummaryDto[], page, size, totalElements, totalPages}. Not team-scoped (single-tenant demo model)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const items = pm.response.json().items;",
+                  "    if (items && items.length > 0) {",
+                  "        pm.collectionVariables.set('conversationId', items[0].id);",
+                  "        pm.collectionVariables.set('contactId', items[0].contactId);",
+                  "        console.log('Stored conversationId =', items[0].id, ', contactId =', items[0].contactId);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Messages",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/conversations/{{conversationId}}/messages?limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "conversations", "{{conversationId}}", "messages"],
+              "query": [
+                { "key": "before", "value": "", "disabled": true, "description": "ISO-8601 instant; omit for the most recent page" },
+                { "key": "limit", "value": "50" }
+              ]
+            },
+            "description": "Response: MessageDto[] in chronological order. Run \"List Conversations\" first to populate {{conversationId}}."
+          }
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Thanks for reaching out — let me look into that for you.\",\n  \"sender\": \"AGENT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/conversations/{{conversationId}}/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "conversations", "{{conversationId}}", "messages"]
+            },
+            "description": "sender: AGENT (default) | CUSTOMER | AI | SYSTEM. Sending as CUSTOMER re-enters the bot-flow/AI orchestration pipeline instead of just logging a message. Response: MessageDto (201)."
+          }
+        },
+        {
+          "name": "Assign Conversation",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/conversations/{{conversationId}}/assign",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "conversations", "{{conversationId}}", "assign"]
+            },
+            "description": "Response: ConversationSummaryDto. Auto-bumps status from OPEN to PENDING."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Team",
+      "item": [
+        {
+          "name": "List Team Members",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/team", "host": ["{{baseUrl}}"], "path": ["api", "team"] },
+            "description": "Response: UserDto[] for the authenticated user's team (derived from the JWT, not a path param)."
+          }
+        },
+        {
+          "name": "Invite Team Member",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newagent@smartify.demo\",\n  \"displayName\": \"New Agent\",\n  \"role\": \"AGENT\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/team/invite", "host": ["{{baseUrl}}"], "path": ["api", "team", "invite"] },
+            "description": "role: ADMIN | MANAGER | AGENT (no VIEWER on the backend yet). Response: UserDto (201)."
+          }
+        },
+        {
+          "name": "Update User Role",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"MANAGER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/role",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}", "role"]
+            },
+            "description": "role: ADMIN | MANAGER | AGENT. Response: UserDto."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bot Flows",
+      "item": [
+        {
+          "name": "List Bot Flows",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/bot-flows", "host": ["{{baseUrl}}"], "path": ["api", "bot-flows"] },
+            "description": "Response: BotFlowDto[] — each has {id, name, description, status, version, graphJson: {nodes, edges, startNodeId}, createdAt, updatedAt}."
+          }
+        },
+        {
+          "name": "Create Bot Flow",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Flow\",\n  \"description\": \"Created via Postman\",\n  \"graphJson\": {\n    \"startNodeId\": \"n1\",\n    \"nodes\": [\n      { \"id\": \"n1\", \"type\": \"welcomeMessage\", \"position\": { \"x\": 0, \"y\": 0 }, \"data\": { \"config\": { \"type\": \"welcomeMessage\", \"text\": \"Hi! How can I help?\" } } }\n    ],\n    \"edges\": []\n  }\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/bot-flows", "host": ["{{baseUrl}}"], "path": ["api", "bot-flows"] },
+            "description": "graphJson must match app/workflows/flow_schema.py field-for-field (see docs/bot-flow-spec.md). Response: BotFlowDto (201), status defaults to DRAFT."
+          }
+        },
+        {
+          "name": "Get Bot Flow",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/bot-flows/{{botFlowId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bot-flows", "{{botFlowId}}"]
+            },
+            "description": "Defaults to the seeded demo flow ('Sales & Support Triage') from V2__seed_demo_data.sql."
+          }
+        },
+        {
+          "name": "Update Bot Flow (Save Draft)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"graphJson\": {\n    \"startNodeId\": \"n1\",\n    \"nodes\": [\n      { \"id\": \"n1\", \"type\": \"welcomeMessage\", \"position\": { \"x\": 0, \"y\": 0 }, \"data\": { \"config\": { \"type\": \"welcomeMessage\", \"text\": \"Hi there! Updated via Postman.\" } } }\n    ],\n    \"edges\": []\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bot-flows/{{botFlowId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bot-flows", "{{botFlowId}}"]
+            },
+            "description": "name/description are optional and left unchanged if omitted. Bumps version by 1. Response: BotFlowDto."
+          }
+        },
+        {
+          "name": "Publish Bot Flow",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/bot-flows/{{botFlowId}}/publish",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bot-flows", "{{botFlowId}}", "publish"]
+            },
+            "description": "No request body. Flips status to PUBLISHED on whatever was last saved — does not accept new graph content."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Get Metrics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/metrics?range=24h",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "metrics"],
+              "query": [{ "key": "range", "value": "24h", "description": "e.g. 1h, 24h, 7d" }]
+            },
+            "description": "Response: {activeSessions, resolutionRate, avgResponseTime, sentiment} — each a MetricCardDto {current, target, peak, series: [{t, v}]}. avgResponseTime and sentiment are backend placeholders (see docs/security-notes.md) and will read 0/empty."
+          }
+        },
+        {
+          "name": "List Alerts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/alerts?unreadOnly=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alerts"],
+              "query": [{ "key": "unreadOnly", "value": "false" }]
+            },
+            "description": "Response: AlertDto[]. Alerts are only generated by the keyword-spike rule in AlertService (default: 5+ mentions of \"refund\" in 15 minutes)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Contacts",
+      "item": [
+        {
+          "name": "Get Contact",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/contacts/{{contactId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "contacts", "{{contactId}}"]
+            },
+            "description": "{{contactId}} is populated by Conversations → List Conversations (taken from the first result's contactId). Run that first, or set it manually. Response: ContactDto."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "Simulate Inbound Message (Web Chat)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"externalId\": \"postman-test-customer\",\n  \"displayName\": \"Postman Test Customer\",\n  \"text\": \"Hi, I need help with my order\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/webchat",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "webhooks", "webchat"]
+            },
+            "description": "channel path segment: webchat (default) | whatsapp | facebook — all normalized identically (stub integration layer, see docs/security-notes.md). The X-Webhook-Signature header is computed automatically by this request's Pre-request Script using {{webhookSecret}}. 202 Accepted with an empty body on success; the AI/bot reply shows up via GET Messages on the conversation it creates/continues, not in this response. First-time externalIds get no bot_flow assigned, so they go through plain AI chat rather than the bot-flow graph."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const secret = pm.collectionVariables.get('webhookSecret');",
+                  "const rawBody = pm.variables.replaceIn(pm.request.body.raw);",
+                  "const hash = CryptoJS.HmacSHA256(rawBody, secret).toString(CryptoJS.enc.Hex);",
+                  "pm.request.headers.upsert({ key: 'X-Webhook-Signature', value: 'sha256=' + hash });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Backend Health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/actuator/health", "host": ["{{baseUrl}}"], "path": ["actuator", "health"] }
+          }
+        },
+        {
+          "name": "AI Service Health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{aiServiceBaseUrl}}/healthz", "host": ["{{aiServiceBaseUrl}}"], "path": ["healthz"] }
+          }
+        }
+      ]
+    }
+  ]
+}

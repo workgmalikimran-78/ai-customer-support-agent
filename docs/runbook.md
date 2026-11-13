@@ -16,6 +16,9 @@ docker compose up --build
 
 Demo login seeded by `backend/src/main/resources/db/migration/V2__seed_demo_data.sql` — see that file (or the backend build report) for credentials.
 
+A ready-to-import Postman collection covering every REST endpoint (including a working webhook
+signature pre-request script) lives in [`postman/`](../postman/README.md).
+
 ## Running services independently (no Docker)
 
 **Python AI service**
@@ -56,7 +59,7 @@ This scaffold's defaults are deliberately convenient for local dev and are **not
 1. **Set real secrets.** `JWT_SECRET`, `AI_SERVICE_API_KEY`, and `WEBHOOK_SHARED_SECRET` all default to known placeholder strings. Generate real ones (e.g. `openssl rand -hex 32`) and set `REQUIRE_STRONG_SECRETS=true` — the backend will then refuse to start if any of the three are missing, too short (<32 chars), or still match a known placeholder (see `SecurityHardeningValidator`).
 2. **Set `CORS_ALLOWED_ORIGINS`** to your real frontend origin(s) — comma-separated, no wildcard. Applies to both `backend` and `ai-service`.
 3. **Webhook signature**: `/api/webhooks/{channel}` requires `X-Webhook-Signature: sha256=<HMAC-SHA256 of the raw body, keyed by WEBHOOK_SHARED_SECRET>` (see `WebhookSignatureFilter` and `docs/api-contracts.md`). If you wire up a real WhatsApp/Facebook Messenger webhook, you'll need to adapt this to each provider's actual signing scheme instead (Meta uses `X-Hub-Signature-256` with the app secret, for example).
-4. **Rate-limit `/api/auth/login`** — not implemented yet. There's no brute-force protection on login as shipped.
+4. **Rate-limit `/api/auth/login`** — implemented. `LoginRateLimiter` tracks failed attempts per client-IP+email key (in-memory, single-instance only) and returns `429` with a `Retry-After` header once `LOGIN_RATE_LIMIT_MAX_ATTEMPTS` (default 5) failures land inside `LOGIN_RATE_LIMIT_WINDOW_MINUTES` (default 15), locking that key out for `LOGIN_RATE_LIMIT_LOCKOUT_MINUTES` (default 15). A successful login clears the counter. If you run multiple backend replicas, this needs to move to a shared store (e.g. Redis, already used by `ai-service`) since each instance currently tracks its own in-memory state.
 5. **Dependency scanning** — run `bash .claude/skills/full-test/scripts/run_all.sh --audit` (or `npm audit`, `pip-audit`, `mvn org.owasp:dependency-check-maven:check` individually) before any release; see the `full-test` skill for details.
 6. This is still a single-tenant demo data model (one seeded team) — there's no cross-tenant authorization boundary to review yet. Don't assume isolation between "teams" if you add multi-tenancy later without revisiting `Conversation`/`BotFlow` ownership checks.
 

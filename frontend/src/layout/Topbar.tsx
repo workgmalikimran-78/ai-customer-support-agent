@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { BellIcon, ChevronDownIcon, SearchIcon } from '@/components/icons/Icons';
 import { Avatar } from '@/components/ui/Avatar';
 import { Input } from '@/components/ui/Input';
@@ -6,6 +7,13 @@ import styles from './Topbar.module.css';
 
 export function Topbar() {
   const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    logout();
+    navigate('/login', { replace: true });
+  }
 
   return (
     <header className={styles.topbar}>
@@ -19,7 +27,7 @@ export function Topbar() {
           <span className={styles.badgeDot} />
         </button>
 
-        <button type="button" className={styles.userButton}>
+        <button type="button" className={styles.userButton} onClick={handleLogout} title="Sign out">
           <Avatar name={user.name} size="sm" />
           <span className={styles.userName}>{user.name}</span>
           <ChevronDownIcon size={14} />

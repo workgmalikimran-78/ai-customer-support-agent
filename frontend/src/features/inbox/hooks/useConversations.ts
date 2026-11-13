@@ -7,7 +7,7 @@ export function useConversations() {
 
   return useQuery({
     queryKey: ['conversations', teamId],
-    queryFn: () => fetchConversations(teamId),
+    queryFn: () => fetchConversations(),
     staleTime: 15_000,
   });
 }

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '@/store/authStore';
 
 export const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://localhost:8080';
@@ -28,11 +29,21 @@ httpClient.interceptors.request.use((config) => {
 httpClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Centralized place to log/report API errors. Swallow network errors
-    // when the backend isn't up yet so individual hooks can fall back to
-    // mock data instead of crashing the UI.
+    // Centralized place to log/report API errors before letting React Query's
+    // isError/error state handle presentation per-hook.
     // eslint-disable-next-line no-console
     console.warn('[httpClient] request failed:', error?.message ?? error);
+
+    const status = error?.response?.status;
+    const isAuthEndpoint = (error?.config?.url ?? '').includes('/api/auth/');
+    // A stale/invalid/expired JWT surfaces here as 401 or 403 on any protected endpoint.
+    // Without this, pages silently render an empty state (e.g. "0 open conversations")
+    // instead of explaining that the session needs to be re-established.
+    if ((status === 401 || status === 403) && !isAuthEndpoint && window.location.pathname !== '/login') {
+      useAuthStore.getState().logout();
+      window.location.href = '/login';
+    }
+
     return Promise.reject(error);
   },
 );

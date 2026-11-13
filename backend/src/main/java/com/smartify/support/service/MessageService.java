@@ -39,7 +39,13 @@ public class MessageService {
     public List<Message> listForConversation(UUID conversationId, Instant before, int limit) {
         int pageSize = limit > 0 ? limit : 50;
         PageRequest pageRequest = PageRequest.of(0, pageSize, Sort.by("createdAt").descending());
-        List<Message> messages = messageRepository.findBefore(conversationId, before, pageRequest);
+        // Branching here (rather than a "before is null or ..." clause in the query) sidesteps
+        // a Hibernate/pgjdbc quirk where a null Instant bind parameter gets sent with an
+        // unresolvable type, and Postgres rejects the resulting cast ("cannot cast type bytea
+        // to timestamp with time zone").
+        List<Message> messages = before == null
+                ? messageRepository.findByConversationIdOrderByCreatedAtDesc(conversationId, pageRequest)
+                : messageRepository.findBefore(conversationId, before, pageRequest);
         return messages.stream()
                 .sorted(Comparator.comparing(Message::getCreatedAt))
                 .collect(Collectors.toList());

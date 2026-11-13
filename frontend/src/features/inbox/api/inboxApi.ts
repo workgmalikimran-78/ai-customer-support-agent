@@ -1,44 +1,87 @@
 import httpClient from '@/api/httpClient';
-import type { Conversation, Message } from '../types/inbox';
-import { getMockMessages, MOCK_CONVERSATIONS } from './mockInbox';
+import type { Channel, Conversation, ConversationStatus, Message, MessageSender } from '../types/inbox';
 
-export async function fetchConversations(teamId: string): Promise<Conversation[]> {
-  try {
-    const { data } = await httpClient.get<Conversation[]>(`/api/teams/${teamId}/conversations`);
-    return data;
-  } catch (err) {
-    console.warn('[inboxApi] fetchConversations falling back to mock data:', err);
-    return structuredClone(MOCK_CONVERSATIONS);
-  }
+interface ConversationSummaryDto {
+  id: string;
+  contactDisplayName: string;
+  contactAvatarUrl: string | null;
+  channelType: string;
+  status: string;
+  unreadCount: number;
+  lastMessagePreview: string;
+  lastMessageAt: string;
+  sentimentScore: number | null;
+}
+
+interface PagedResponse<T> {
+  items: T[];
+}
+
+interface MessageDto {
+  id: string;
+  conversationId: string;
+  sender: string;
+  content: string;
+  createdAt: string;
+}
+
+const CHANNEL_FROM_BACKEND: Record<string, Channel> = {
+  WEB_CHAT: 'webchat',
+  WHATSAPP: 'whatsapp',
+  FACEBOOK_MESSENGER: 'facebook',
+};
+
+const STATUS_FROM_BACKEND: Record<string, ConversationStatus> = {
+  OPEN: 'open',
+  PENDING: 'pending',
+  RESOLVED: 'resolved',
+  ESCALATED: 'open', // frontend has no distinct "escalated" state yet
+};
+
+const SENDER_FROM_BACKEND: Record<string, MessageSender> = {
+  CUSTOMER: 'customer',
+  AI: 'ai',
+  AGENT: 'agent',
+  SYSTEM: 'agent', // no distinct system-message styling yet
+};
+
+export function toConversation(dto: ConversationSummaryDto): Conversation {
+  return {
+    id: dto.id,
+    contactName: dto.contactDisplayName,
+    channel: CHANNEL_FROM_BACKEND[dto.channelType] ?? 'browser',
+    avatarUrl: dto.contactAvatarUrl ?? undefined,
+    lastMessagePreview: dto.lastMessagePreview,
+    lastMessageAt: dto.lastMessageAt,
+    unreadCount: dto.unreadCount,
+    status: STATUS_FROM_BACKEND[dto.status] ?? 'open',
+  };
+}
+
+export function toMessage(dto: MessageDto): Message {
+  return {
+    id: dto.id,
+    conversationId: dto.conversationId,
+    sender: SENDER_FROM_BACKEND[dto.sender] ?? 'agent',
+    text: dto.content,
+    sentAt: dto.createdAt,
+  };
+}
+
+export async function fetchConversations(): Promise<Conversation[]> {
+  const { data } = await httpClient.get<PagedResponse<ConversationSummaryDto>>('/api/conversations');
+  return data.items.map(toConversation);
 }
 
 export async function fetchMessages(conversationId: string): Promise<Message[]> {
-  try {
-    const { data } = await httpClient.get<Message[]>(
-      `/api/conversations/${conversationId}/messages`,
-    );
-    return data;
-  } catch (err) {
-    console.warn('[inboxApi] fetchMessages falling back to mock data:', err);
-    return structuredClone(getMockMessages(conversationId));
-  }
+  const { data } = await httpClient.get<MessageDto[]>(`/api/conversations/${conversationId}/messages`);
+  return data.map(toMessage);
 }
 
 export async function sendMessage(conversationId: string, text: string): Promise<Message> {
-  try {
-    const { data } = await httpClient.post<Message>(
-      `/api/conversations/${conversationId}/messages`,
-      { text },
-    );
-    return data;
-  } catch (err) {
-    console.warn('[inboxApi] sendMessage falling back to local echo:', err);
-    return {
-      id: `local-${Date.now()}`,
-      conversationId,
-      sender: 'agent',
-      text,
-      sentAt: new Date().toISOString(),
-    };
-  }
+  const { data } = await httpClient.post<MessageDto>(
+    `/api/conversations/${conversationId}/messages`,
+    { content: text },
+  );
+  return toMessage(data);
 }

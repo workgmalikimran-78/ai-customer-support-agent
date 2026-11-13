@@ -1,47 +1,53 @@
 import httpClient from '@/api/httpClient';
 import type { BotFlow } from '../types/botFlow';
-import { DEFAULT_FLOW_ID, MOCK_BOT_FLOW } from './mockBotFlow';
 
-/**
- * Bot-flow API layer. Hits `GET/PUT/POST /api/bot-flows` on the Spring Boot
- * backend, falling back to in-memory mock data whenever the request fails
- * (e.g. the backend isn't running yet in local dev). Swapping to a fully
- * real backend is just deleting the `catch` fallbacks below.
- */
+// Matches the demo bot flow row seeded by V2__seed_demo_data.sql.
+export const DEFAULT_FLOW_ID = '00000000-0000-0000-0000-000000000020';
 
-let mockFlowCache: BotFlow = structuredClone(MOCK_BOT_FLOW);
+// Backend's BotFlowDto nests the shared {nodes, edges, startNodeId} graph shape under a
+// `graphJson` field rather than flattening it onto the DTO.
+interface BotFlowDto {
+  id: string;
+  name: string;
+  graphJson: Pick<BotFlow, 'nodes' | 'edges' | 'startNodeId'>;
+}
+
+function toBotFlow(dto: BotFlowDto): BotFlow {
+  return {
+    id: dto.id,
+    name: dto.name,
+    nodes: dto.graphJson.nodes,
+    edges: dto.graphJson.edges,
+    startNodeId: dto.graphJson.startNodeId,
+  };
+}
+
+function toUpdateRequest(flow: BotFlow) {
+  return {
+    graphJson: {
+      nodes: flow.nodes,
+      edges: flow.edges,
+      startNodeId: flow.startNodeId,
+    },
+  };
+}
 
 export async function fetchBotFlow(flowId: string = DEFAULT_FLOW_ID): Promise<BotFlow> {
-  try {
-    const { data } = await httpClient.get<BotFlow>(`/api/bot-flows/${flowId}`);
-    return data;
-  } catch (err) {
-    console.warn('[botFlowApi] fetchBotFlow falling back to mock data:', err);
-    return structuredClone(mockFlowCache);
-  }
+  const { data } = await httpClient.get<BotFlowDto>(`/api/bot-flows/${flowId}`);
+  return toBotFlow(data);
 }
 
 export async function saveBotFlow(flow: BotFlow): Promise<BotFlow> {
-  try {
-    const { data } = await httpClient.put<BotFlow>(`/api/bot-flows/${flow.id ?? DEFAULT_FLOW_ID}`, flow);
-    return data;
-  } catch (err) {
-    console.warn('[botFlowApi] saveBotFlow falling back to mock cache:', err);
-    mockFlowCache = structuredClone(flow);
-    return structuredClone(mockFlowCache);
-  }
+  const { data } = await httpClient.put<BotFlowDto>(
+    `/api/bot-flows/${flow.id ?? DEFAULT_FLOW_ID}`,
+    toUpdateRequest(flow),
+  );
+  return toBotFlow(data);
 }
 
 export async function publishBotFlow(flow: BotFlow): Promise<BotFlow> {
-  try {
-    const { data } = await httpClient.post<BotFlow>(
-      `/api/bot-flows/${flow.id ?? DEFAULT_FLOW_ID}/publish`,
-      flow,
-    );
-    return data;
-  } catch (err) {
-    console.warn('[botFlowApi] publishBotFlow falling back to mock cache:', err);
-    mockFlowCache = structuredClone(flow);
-    return structuredClone(mockFlowCache);
-  }
+  const { data } = await httpClient.post<BotFlowDto>(
+    `/api/bot-flows/${flow.id ?? DEFAULT_FLOW_ID}/publish`,
+  );
+  return toBotFlow(data);
 }

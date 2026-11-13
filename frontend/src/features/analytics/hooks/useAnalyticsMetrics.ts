@@ -7,7 +7,7 @@ export function useAnalyticsMetrics() {
 
   return useQuery({
     queryKey: ['analytics-metrics', teamId],
-    queryFn: () => fetchAnalyticsMetrics(teamId),
+    queryFn: () => fetchAnalyticsMetrics(),
     staleTime: 30_000,
     refetchInterval: 60_000,
   });
