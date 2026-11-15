@@ -36,6 +36,9 @@ public class Conversation {
     @Column(name = "bot_flow_id")
     private UUID botFlowId;
 
+    @Column(name = "customer_id")
+    private UUID customerId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ConversationStatus status;

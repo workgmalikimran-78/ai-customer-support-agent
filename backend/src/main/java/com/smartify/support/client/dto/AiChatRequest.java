@@ -18,4 +18,7 @@ public class AiChatRequest {
     private String message;
     private List<ChatHistoryEntry> history;
     private FlowContext flowContext;
+    // Pre-formatted summary of the logged-in customer's recent orders, for the agent to ground
+    // "what's my order status" answers in -- null for anonymous conversations.
+    private String orderContext;
 }

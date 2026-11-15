@@ -28,6 +28,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final CustomerJwtAuthFilter customerJwtAuthFilter;
     private final WebhookSignatureFilter webhookSignatureFilter;
     private final UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
@@ -58,6 +59,9 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/webhooks/**",
+                                "/api/webchat/**",
+                                "/api/shop/auth/**",
+                                "/api/shop/products/**",
                                 "/actuator/health",
                                 "/actuator/health/**",
                                 "/ws/**",
@@ -68,7 +72,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(webhookSignatureFilter, JwtAuthFilter.class);
+                .addFilterBefore(customerJwtAuthFilter, JwtAuthFilter.class)
+                .addFilterBefore(webhookSignatureFilter, CustomerJwtAuthFilter.class);
 
         return http.build();
     }

@@ -5,15 +5,21 @@ the no-API-key fallback paths baked into the agents, and on Chroma's
 ephemeral in-memory client (the default when CHROMA_URL is unset or
 unreachable).
 """
+
 import os
 
 import pytest
 
-# Make sure no API keys leak in from the developer's shell during test runs,
-# so the fallback code paths are exercised deterministically.
-os.environ.pop("ANTHROPIC_API_KEY", None)
-os.environ.pop("AI_SERVICE_API_KEY", None)
-os.environ.pop("CHROMA_URL", None)
+# Make sure no API keys leak in from the developer's shell OR .env file during test
+# runs, so the fallback code paths are exercised deterministically. Settings has
+# env_file=".env" configured unconditionally, so popping these (making them *absent*
+# from os.environ) isn't enough on its own -- pydantic-settings falls through and reads
+# the real values straight from the .env file on disk. Setting them to "" instead makes
+# the OS-env layer (which pydantic-settings prioritizes over the dotenv file) shadow
+# whatever's actually in .env.
+os.environ["ANTHROPIC_API_KEY"] = ""
+os.environ["AI_SERVICE_API_KEY"] = ""
+os.environ["CHROMA_URL"] = ""
 
 from app.config.settings import get_settings  # noqa: E402
 

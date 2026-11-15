@@ -20,7 +20,11 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class AiServiceClientImpl implements AiServiceClient {
 
-    private static final Duration TIMEOUT = Duration.ofSeconds(30);
+    // The support agent is a ReAct loop that can chain multiple tool calls (e.g. a RAG
+    // lookup followed by a final generation), each a full Claude round-trip -- 30s was
+    // occasionally too tight for that, surfacing as "Timeout on blocking read" even on
+    // requests that were just slow, not actually stuck.
+    private static final Duration TIMEOUT = Duration.ofSeconds(60);
 
     private final WebClient aiServiceWebClient;
 

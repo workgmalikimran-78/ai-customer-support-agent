@@ -49,7 +49,8 @@ public class AuthController {
         User user = userService.getUserByEmail(request.getEmail());
         String token = jwtService.generateToken(user.getId().toString(), Map.of(
                 "email", user.getEmail(),
-                "role", user.getRole().name()));
+                "role", user.getRole().name(),
+                "principalType", "AGENT"));
 
         return ResponseEntity.ok(AuthResponse.builder()
                 .token(token)
@@ -79,7 +80,8 @@ public class AuthController {
         User user = userService.register(request);
         String token = jwtService.generateToken(user.getId().toString(), Map.of(
                 "email", user.getEmail(),
-                "role", user.getRole().name()));
+                "role", user.getRole().name(),
+                "principalType", "AGENT"));
 
         return ResponseEntity.status(HttpStatus.CREATED).body(AuthResponse.builder()
                 .token(token)

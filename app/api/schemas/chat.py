@@ -21,6 +21,7 @@ class ChatRequest(BaseModel):
     message: str
     history: List[ChatHistoryMessage] = Field(default_factory=list)
     flowContext: Optional[FlowContext] = None
+    orderContext: Optional[str] = None
 
 
 class ChatResponse(BaseModel):

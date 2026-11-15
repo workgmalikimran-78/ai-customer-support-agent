@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/authStore';
+import { useCustomerAuthStore } from '@/store/customerAuthStore';
 
 export const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://localhost:8080';
@@ -19,7 +20,11 @@ export const httpClient = axios.create({
 
 httpClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('smartify_token');
-  if (token) {
+  // Don't clobber an Authorization header a caller already set explicitly (e.g. webchatApi.ts
+  // attaching a customer token on /api/webchat/**) -- without this guard, an agent logged into
+  // the dashboard in the same browser would silently override a customer's own token on every
+  // request through this shared client.
+  if (token && !config.headers?.Authorization) {
     config.headers = config.headers ?? {};
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -49,3 +54,43 @@ httpClient.interceptors.response.use(
 );
 
 export default httpClient;
+
+/**
+ * Separate axios instance for the customer-facing shop (/shop/*). Must stay independent from
+ * `httpClient`: that one always attaches the *agent's* token and force-redirects to /login on
+ * 401/403. If shop calls went through it unmodified, a customer's 401 would either attach the
+ * wrong token or nuke an agent's session in the same browser tab.
+ */
+export const shopHttpClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10_000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+shopHttpClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('smartify_customer_token');
+  if (token) {
+    config.headers = config.headers ?? {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+shopHttpClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // eslint-disable-next-line no-console
+    console.warn('[shopHttpClient] request failed:', error?.message ?? error);
+
+    const status = error?.response?.status;
+    const isAuthEndpoint = (error?.config?.url ?? '').includes('/api/shop/auth/');
+    if ((status === 401 || status === 403) && !isAuthEndpoint && window.location.pathname !== '/shop/login') {
+      useCustomerAuthStore.getState().logout();
+      window.location.href = '/shop/login';
+    }
+
+    return Promise.reject(error);
+  },
+);

@@ -51,6 +51,7 @@ public class FlowExecutionOrchestrator {
     private final AiServiceClient aiServiceClient;
     private final NotificationPublisher notificationPublisher;
     private final SentimentIngestionService sentimentIngestionService;
+    private final OrderService orderService;
     private final ObjectMapper objectMapper;
 
     @Transactional
@@ -129,12 +130,17 @@ public class FlowExecutionOrchestrator {
                         .build())
                 .collect(Collectors.toList());
 
+        String orderContext = conversation.getCustomerId() != null
+                ? orderService.buildOrderContextSummary(conversation.getCustomerId())
+                : null;
+
         AiChatRequest request = AiChatRequest.builder()
                 .conversationId(conversation.getId().toString())
                 .contactId(conversation.getContactId().toString())
                 .message(incomingMessage)
                 .history(history)
                 .flowContext(null)
+                .orderContext(orderContext)
                 .build();
 
         AiChatResponse response = aiServiceClient.chat(request);

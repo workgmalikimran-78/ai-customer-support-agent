@@ -9,6 +9,13 @@ typing_extensions==4.16.0
 langchain-core==1.7.7
 langchain-anthropic==1.7.10
 langgraph==1.2.20
+# langchain-anthropic==1.7.10 only declares anthropic>=0.120.0 (no upper bound), so pip
+# resolves to the newest anthropic release by default. anthropic>=2.0 restructured
+# Messages.create()'s signature (temperature/top_p/etc. moved out of top-level kwargs),
+# which langchain-anthropic==1.7.10 wasn't built against -- every real LLM call fails with
+# "400: temperature: Extra inputs are not permitted". Pin below 2.0 until langchain-anthropic
+# ships a release that supports the new anthropic major version.
+anthropic<2.0.0
 
 chromadb==1.5.9
 

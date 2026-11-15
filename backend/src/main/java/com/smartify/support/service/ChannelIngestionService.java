@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.UUID;
 
 /**
  * Normalizes inbound channel webhook payloads into Contact/Conversation/Message rows.
@@ -35,6 +36,13 @@ public class ChannelIngestionService {
 
     @Transactional
     public Message ingest(String channelSlug, WebhookPayload payload) {
+        return ingest(channelSlug, payload, null);
+    }
+
+    /** @param customerId identity of a logged-in shop customer, resolved from a verified JWT by
+     *  the caller (never trust a client-supplied customerId) -- null for anonymous chat. */
+    @Transactional
+    public Message ingest(String channelSlug, WebhookPayload payload, UUID customerId) {
         ChannelType channelType = resolveChannelType(channelSlug);
         Channel channel = channelRepository.findFirstByType(channelType)
                 .orElseGet(() -> channelRepository.save(Channel.builder()
@@ -51,9 +59,11 @@ public class ChannelIngestionService {
                         .build()));
 
         Conversation conversation = findOpenConversation(contact.getId(), channel.getId())
+                .map(existing -> attributeToCustomer(existing, customerId))
                 .orElseGet(() -> conversationRepository.save(Conversation.builder()
                         .contactId(contact.getId())
                         .channelId(channel.getId())
+                        .customerId(customerId)
                         .status(ConversationStatus.OPEN)
                         .unreadCount(0)
                         .build()));
@@ -64,6 +74,17 @@ public class ChannelIngestionService {
         log.info("Ingested message {} for conversation {} via channel {}", message.getId(), conversation.getId(),
                 channelType);
         return message;
+    }
+
+    /** Backfills customerId onto a reused conversation that started anonymous and only later
+     * had a customer log in mid-session -- never downgrades an already-attributed conversation
+     * back to anonymous. */
+    private Conversation attributeToCustomer(Conversation conversation, UUID customerId) {
+        if (conversation.getCustomerId() == null && customerId != null) {
+            conversation.setCustomerId(customerId);
+            return conversationRepository.save(conversation);
+        }
+        return conversation;
     }
 
     private java.util.Optional<Conversation> findOpenConversation(java.util.UUID contactId, java.util.UUID channelId) {

@@ -19,7 +19,12 @@ async def chat(request: ChatRequest) -> ChatResponse:
     if request.flowContext and request.flowContext.variables:
         bot_id = str(request.flowContext.variables.get("botId") or "default")
 
-    result = generate_reply(message=request.message, history=history, bot_id=bot_id)
+    result = generate_reply(
+        message=request.message,
+        history=history,
+        bot_id=bot_id,
+        order_context=request.orderContext or "",
+    )
 
     next_node_id = None
     if request.flowContext:

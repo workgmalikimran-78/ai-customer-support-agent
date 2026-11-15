@@ -1,0 +1,65 @@
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 16px;
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.nav a {
+  color: var(--color-text);
+}
+
+.nav a:hover {
+  color: var(--color-accent-light);
+}
+
+.customerName {
+  color: var(--color-text-faint);
+}
+
+.logoutButton {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  padding: 6px 14px;
+  font-size: 12.5px;
+}
+
+.logoutButton:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-light);
+}
+
+.content {
+  flex: 1;
+  padding: var(--space-6);
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+}

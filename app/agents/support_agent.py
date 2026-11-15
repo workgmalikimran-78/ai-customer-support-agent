@@ -79,6 +79,7 @@ def generate_reply(
     history: Optional[List[Dict[str, str]]] = None,
     bot_id: str = DEFAULT_BOT_ID,
     rag_context: str = "",
+    order_context: str = "",
 ) -> Dict[str, Any]:
     """Generate a support reply for `message`.
 
@@ -106,7 +107,7 @@ def generate_reply(
         from langchain_core.messages import HumanMessage
 
         lc_history = _history_to_lc_messages(history)
-        user_prompt = build_user_prompt(message, rag_context=rag_context)
+        user_prompt = build_user_prompt(message, rag_context=rag_context, order_context=order_context)
         input_messages = lc_history + [HumanMessage(content=user_prompt)]
 
         result = agent.invoke({"messages": input_messages})
