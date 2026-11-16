@@ -12,6 +12,7 @@ interface BaseNodeProps {
   selected?: boolean;
   showSource?: boolean;
   showTarget?: boolean;
+  isStart?: boolean;
 }
 
 export function BaseNode({
@@ -22,12 +23,14 @@ export function BaseNode({
   selected,
   showSource = true,
   showTarget = true,
+  isStart,
 }: BaseNodeProps) {
   const bodyText = config.text ?? config.promptTemplate ?? config.url ?? config.reason ?? config.label;
 
   return (
     <div className={clsx(styles.node, selected && styles.selected)}>
       {showTarget && <Handle type="target" position={Position.Left} className={styles.handle} />}
+      {isStart && <span className={styles.startBadge}>START</span>}
       <div className={styles.header} style={{ background: color }}>
         <span className={styles.iconWrap}>{icon}</span>
         <span>{config.label ?? label}</span>

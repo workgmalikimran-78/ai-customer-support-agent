@@ -2,7 +2,9 @@ package com.smartify.support.controller;
 
 import com.smartify.support.dto.request.CreateBotFlowRequest;
 import com.smartify.support.dto.request.UpdateBotFlowRequest;
+import com.smartify.support.dto.request.ValidateBotFlowRequest;
 import com.smartify.support.dto.response.BotFlowDto;
+import com.smartify.support.dto.response.BotFlowValidationDto;
 import com.smartify.support.service.BotFlowService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -46,5 +48,11 @@ public class BotFlowController {
     public ResponseEntity<BotFlowDto> publish(@PathVariable UUID id) {
         var botFlow = botFlowService.publish(id);
         return ResponseEntity.ok(botFlowService.toDto(botFlow));
+    }
+
+    @PostMapping("/{id}/validate")
+    public ResponseEntity<BotFlowValidationDto> validate(@PathVariable UUID id,
+            @Valid @RequestBody ValidateBotFlowRequest request) {
+        return ResponseEntity.ok(botFlowService.validate(request.getGraphJson()));
     }
 }

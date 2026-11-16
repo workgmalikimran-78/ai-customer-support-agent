@@ -11,6 +11,7 @@ export function QuickRepliesNode({ data, selected }: NodeProps<FlowCanvasNode>) 
       label="Quick Replies"
       config={data.config}
       selected={selected}
+      isStart={data.isStart}
     />
   );
 }

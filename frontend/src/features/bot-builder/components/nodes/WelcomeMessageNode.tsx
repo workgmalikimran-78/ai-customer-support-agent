@@ -12,6 +12,7 @@ export function WelcomeMessageNode({ data, selected }: NodeProps<FlowCanvasNode>
       config={data.config}
       selected={selected}
       showTarget={false}
+      isStart={data.isStart}
     />
   );
 }

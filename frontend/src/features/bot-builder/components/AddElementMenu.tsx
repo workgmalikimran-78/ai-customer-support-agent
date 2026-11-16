@@ -1,15 +1,25 @@
 import type { ReactElement } from 'react';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { Button } from '@/components/ui/Button';
-import { BotIcon, FilterIcon, InboxIcon, PlusIcon, SettingsIcon } from '@/components/icons/Icons';
+import {
+  AnalyticsIcon,
+  BotIcon,
+  FilterIcon,
+  InboxIcon,
+  PlusIcon,
+  SettingsIcon,
+  TeamIcon,
+} from '@/components/icons/Icons';
 import { useFlowBuilderStore } from '../store/flowBuilderStore';
 import type { BotNodeType } from '../types/botFlow';
 
 const ADDABLE_ELEMENTS: { type: BotNodeType; label: string; icon: ReactElement }[] = [
   { type: 'textBlock', label: 'Text Block', icon: <InboxIcon size={14} /> },
+  { type: 'intentClassification', label: 'Intent Classification', icon: <AnalyticsIcon size={14} /> },
   { type: 'quickReplies', label: 'Quick Replies', icon: <FilterIcon size={14} /> },
   { type: 'apiCall', label: 'API Call', icon: <SettingsIcon size={14} /> },
   { type: 'aiResponse', label: 'AI Response', icon: <BotIcon size={14} /> },
+  { type: 'directToAgent', label: 'Direct to Agent', icon: <TeamIcon size={14} /> },
 ];
 
 export function AddElementMenu() {

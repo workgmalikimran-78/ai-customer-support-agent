@@ -6,6 +6,7 @@ import {
   MiniMap,
   ReactFlow,
   type Connection,
+  type Edge,
   type EdgeChange,
   type NodeChange,
 } from '@xyflow/react';
@@ -14,17 +15,32 @@ import { useFlowBuilderStore } from '../store/flowBuilderStore';
 import { botFlowNodeTypes } from './nodes';
 import { AddElementMenu } from './AddElementMenu';
 import { NodeConfigDrawer } from './NodeConfigDrawer';
+import { EdgeConfigDrawer } from './EdgeConfigDrawer';
 import styles from './BotFlowCanvas.module.css';
 
 export function BotFlowCanvas() {
   const nodes = useFlowBuilderStore((s) => s.nodes);
   const edges = useFlowBuilderStore((s) => s.edges);
+  const startNodeId = useFlowBuilderStore((s) => s.startNodeId);
   const onNodesChangeStore = useFlowBuilderStore((s) => s.onNodesChange);
   const onEdgesChangeStore = useFlowBuilderStore((s) => s.onEdgesChange);
   const onConnectStore = useFlowBuilderStore((s) => s.onConnect);
   const setSelectedNodeId = useFlowBuilderStore((s) => s.setSelectedNodeId);
+  const setSelectedEdgeId = useFlowBuilderStore((s) => s.setSelectedEdgeId);
 
   const nodeTypes = useMemo(() => botFlowNodeTypes, []);
+
+  // Decorate a render-only copy with `isStart` so nodes can show a badge -- this
+  // must never leak into the store's `nodes` array, since that's exactly what
+  // gets serialized to the wire format sent to the backend/flow engine.
+  const nodesForRender = useMemo(
+    () =>
+      nodes.map((node) => ({
+        ...node,
+        data: { ...node.data, isStart: node.id === startNodeId },
+      })),
+    [nodes, startNodeId],
+  );
 
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => onNodesChangeStore(changes as any),
@@ -45,15 +61,20 @@ export function BotFlowCanvas() {
         <AddElementMenu />
       </div>
       <NodeConfigDrawer />
+      <EdgeConfigDrawer />
       <ReactFlow
-        nodes={nodes}
+        nodes={nodesForRender}
         edges={edges}
         nodeTypes={nodeTypes}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}
         onNodeClick={(_, node) => setSelectedNodeId(node.id)}
-        onPaneClick={() => setSelectedNodeId(null)}
+        onEdgeClick={(_, edge: Edge) => setSelectedEdgeId(edge.id)}
+        onPaneClick={() => {
+          setSelectedNodeId(null);
+          setSelectedEdgeId(null);
+        }}
         defaultEdgeOptions={{ type: 'smoothstep', animated: false }}
         fitView
         colorMode="dark"

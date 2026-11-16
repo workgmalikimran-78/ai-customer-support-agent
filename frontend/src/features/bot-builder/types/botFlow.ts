@@ -45,6 +45,9 @@ export interface BotNodeConfig {
 
 export interface BotNodeData {
   config: BotNodeConfig;
+  /** Render-only hint set by `BotFlowCanvas` from `startNodeId`, never part of the
+   * wire format -- `toWireNodes`/the store never set this field themselves. */
+  isStart?: boolean;
   /** Index signature so this shape satisfies React Flow's `Node<T>` constraint
    * (`T extends Record<string, unknown>`) without losing the named `config` field. */
   [key: string]: unknown;

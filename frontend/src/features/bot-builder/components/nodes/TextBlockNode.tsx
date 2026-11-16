@@ -11,6 +11,7 @@ export function TextBlockNode({ data, selected }: NodeProps<FlowCanvasNode>) {
       label="Text Block"
       config={data.config}
       selected={selected}
+      isStart={data.isStart}
     />
   );
 }

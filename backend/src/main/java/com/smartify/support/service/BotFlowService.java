@@ -1,9 +1,14 @@
 package com.smartify.support.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.smartify.support.client.AiServiceClient;
+import com.smartify.support.client.dto.FlowValidateRequest;
+import com.smartify.support.client.dto.FlowValidateResponse;
 import com.smartify.support.dto.request.CreateBotFlowRequest;
 import com.smartify.support.dto.request.UpdateBotFlowRequest;
 import com.smartify.support.dto.response.BotFlowDto;
+import com.smartify.support.dto.response.BotFlowValidationDto;
+import com.smartify.support.exception.FlowValidationException;
 import com.smartify.support.exception.ResourceNotFoundException;
 import com.smartify.support.model.BotFlow;
 import com.smartify.support.model.enums.BotFlowStatus;
@@ -25,6 +30,7 @@ import java.util.stream.Collectors;
 public class BotFlowService {
 
     private final BotFlowRepository botFlowRepository;
+    private final AiServiceClient aiServiceClient;
     private final ObjectMapper objectMapper;
 
     public List<BotFlowDto> listAll() {
@@ -69,8 +75,27 @@ public class BotFlowService {
     @Transactional
     public BotFlow publish(UUID id) {
         BotFlow botFlow = getById(id);
+        FlowValidateResponse result = aiServiceClient.validateFlow(
+                FlowValidateRequest.builder().graphJson(parseJson(botFlow.getGraphJson())).build());
+        if (!result.isValid()) {
+            throw new FlowValidationException(result.getErrors());
+        }
         botFlow.setStatus(BotFlowStatus.PUBLISHED);
         return botFlowRepository.save(botFlow);
+    }
+
+    /**
+     * Validates an arbitrary (possibly unsaved) graph against the Python flow engine's
+     * structural rules -- called by the frontend before publish so the user sees errors
+     * against their current canvas state, not just what's already persisted.
+     */
+    public BotFlowValidationDto validate(Map<String, Object> graphJson) {
+        FlowValidateResponse result = aiServiceClient.validateFlow(
+                FlowValidateRequest.builder().graphJson(graphJson).build());
+        return BotFlowValidationDto.builder()
+                .valid(result.isValid())
+                .errors(result.getErrors())
+                .build();
     }
 
     public BotFlowDto toDto(BotFlow botFlow) {

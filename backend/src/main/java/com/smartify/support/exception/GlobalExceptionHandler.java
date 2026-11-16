@@ -31,6 +31,13 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_GATEWAY, "AI service error: " + ex.getMessage());
     }
 
+    @ExceptionHandler(FlowValidationException.class)
+    public ResponseEntity<Map<String, Object>> handleFlowValidation(FlowValidationException ex) {
+        Map<String, Object> body = buildBody(HttpStatus.BAD_REQUEST, ex.getMessage());
+        body.put("errors", ex.getErrors());
+        return ResponseEntity.badRequest().body(body);
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException ex) {
         return buildResponse(HttpStatus.UNAUTHORIZED, "Invalid email or password");

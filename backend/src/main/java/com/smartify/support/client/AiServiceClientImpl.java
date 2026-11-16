@@ -4,6 +4,8 @@ import com.smartify.support.client.dto.AiChatRequest;
 import com.smartify.support.client.dto.AiChatResponse;
 import com.smartify.support.client.dto.FlowExecuteRequest;
 import com.smartify.support.client.dto.FlowExecuteResponse;
+import com.smartify.support.client.dto.FlowValidateRequest;
+import com.smartify.support.client.dto.FlowValidateResponse;
 import com.smartify.support.client.dto.SentimentRequest;
 import com.smartify.support.client.dto.SentimentResponse;
 import com.smartify.support.exception.AiServiceException;
@@ -57,6 +59,22 @@ public class AiServiceClientImpl implements AiServiceClient {
             throw new AiServiceException("Flow execution call failed with status " + e.getStatusCode(), e);
         } catch (Exception e) {
             throw new AiServiceException("Flow execution call failed: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public FlowValidateResponse validateFlow(FlowValidateRequest request) {
+        try {
+            return aiServiceWebClient.post()
+                    .uri("/v1/flows/validate")
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(FlowValidateResponse.class)
+                    .block(TIMEOUT);
+        } catch (WebClientResponseException e) {
+            throw new AiServiceException("Flow validation call failed with status " + e.getStatusCode(), e);
+        } catch (Exception e) {
+            throw new AiServiceException("Flow validation call failed: " + e.getMessage(), e);
         }
     }
 

@@ -1,9 +1,23 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { DEFAULT_FLOW_ID, fetchBotFlow, publishBotFlow, saveBotFlow } from '../api/botFlowApi';
+import {
+  DEFAULT_FLOW_ID,
+  fetchBotFlow,
+  publishBotFlow,
+  saveBotFlow,
+  validateBotFlow,
+  type FlowValidationError,
+} from '../api/botFlowApi';
 import { useFlowBuilderStore } from '../store/flowBuilderStore';
 import type { BotFlow, BotFlowEdge, BotFlowNode } from '../types/botFlow';
 import type { FlowCanvasEdge, FlowCanvasNode } from '../store/flowBuilderStore';
+
+export class FlowValidationFailedError extends Error {
+  constructor(public errors: FlowValidationError[]) {
+    super('Bot flow failed validation');
+    this.name = 'FlowValidationFailedError';
+  }
+}
 
 function toCanvasNodes(nodes: BotFlowNode[]): FlowCanvasNode[] {
   return nodes.map((node) => ({
@@ -95,12 +109,25 @@ export function useBotFlow(flowId: string = DEFAULT_FLOW_ID) {
   });
 
   const publishMutation = useMutation({
-    mutationFn: () => publishBotFlow(buildCurrentFlow()),
+    mutationFn: async () => {
+      const flow = buildCurrentFlow();
+      const result = await validateBotFlow(flow);
+      if (!result.valid) {
+        throw new FlowValidationFailedError(result.errors);
+      }
+      await saveBotFlow(flow);
+      return publishBotFlow(flow);
+    },
     onSuccess: (data) => {
       queryClient.setQueryData(['bot-flow', flowId], data);
       markClean();
     },
   });
+
+  const validationErrors =
+    publishMutation.error instanceof FlowValidationFailedError
+      ? publishMutation.error.errors
+      : null;
 
   return {
     flow: query.data,
@@ -110,5 +137,7 @@ export function useBotFlow(flowId: string = DEFAULT_FLOW_ID) {
     isSaving: saveMutation.isPending,
     publish: publishMutation.mutate,
     isPublishing: publishMutation.isPending,
+    publishError: publishMutation.error,
+    validationErrors,
   };
 }

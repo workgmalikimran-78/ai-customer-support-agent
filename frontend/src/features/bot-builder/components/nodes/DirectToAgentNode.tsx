@@ -12,6 +12,7 @@ export function DirectToAgentNode({ data, selected }: NodeProps<FlowCanvasNode>)
       config={data.config}
       selected={selected}
       showSource={false}
+      isStart={data.isStart}
     />
   );
 }

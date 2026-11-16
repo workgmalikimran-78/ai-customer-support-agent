@@ -11,6 +11,7 @@ export function IntentClassificationNode({ data, selected }: NodeProps<FlowCanva
       label="Intent Classification"
       config={data.config}
       selected={selected}
+      isStart={data.isStart}
     />
   );
 }

@@ -18,6 +18,7 @@ interface FlowBuilderState {
   edges: FlowCanvasEdge[];
   startNodeId: string | null;
   selectedNodeId: string | null;
+  selectedEdgeId: string | null;
   isDirty: boolean;
 
   setFlow: (nodes: FlowCanvasNode[], edges: FlowCanvasEdge[], startNodeId: string) => void;
@@ -28,6 +29,10 @@ interface FlowBuilderState {
   updateNodeConfig: (nodeId: string, config: Partial<BotNodeConfig>) => void;
   removeNode: (nodeId: string) => void;
   setSelectedNodeId: (nodeId: string | null) => void;
+  setSelectedEdgeId: (edgeId: string | null) => void;
+  updateEdgeCondition: (edgeId: string, condition: Record<string, unknown> | undefined) => void;
+  removeEdge: (edgeId: string) => void;
+  setStartNodeId: (nodeId: string) => void;
   markClean: () => void;
 }
 
@@ -70,10 +75,11 @@ export const useFlowBuilderStore = create<FlowBuilderState>((set, get) => ({
   edges: [],
   startNodeId: null,
   selectedNodeId: null,
+  selectedEdgeId: null,
   isDirty: false,
 
   setFlow: (nodes, edges, startNodeId) =>
-    set({ nodes, edges, startNodeId, isDirty: false, selectedNodeId: null }),
+    set({ nodes, edges, startNodeId, isDirty: false, selectedNodeId: null, selectedEdgeId: null }),
 
   onNodesChange: (changes) => {
     set((state) => ({
@@ -134,11 +140,33 @@ export const useFlowBuilderStore = create<FlowBuilderState>((set, get) => ({
       nodes: state.nodes.filter((node) => node.id !== nodeId),
       edges: state.edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId),
       selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,
+      startNodeId: state.startNodeId === nodeId ? null : state.startNodeId,
       isDirty: true,
     }));
   },
 
-  setSelectedNodeId: (nodeId) => set({ selectedNodeId: nodeId }),
+  setSelectedNodeId: (nodeId) => set({ selectedNodeId: nodeId, selectedEdgeId: null }),
+
+  setSelectedEdgeId: (edgeId) => set({ selectedEdgeId: edgeId, selectedNodeId: null }),
+
+  updateEdgeCondition: (edgeId, condition) => {
+    set((state) => ({
+      edges: state.edges.map((edge) =>
+        edge.id === edgeId ? { ...edge, data: { condition } } : edge,
+      ),
+      isDirty: true,
+    }));
+  },
+
+  removeEdge: (edgeId) => {
+    set((state) => ({
+      edges: state.edges.filter((edge) => edge.id !== edgeId),
+      selectedEdgeId: state.selectedEdgeId === edgeId ? null : state.selectedEdgeId,
+      isDirty: true,
+    }));
+  },
+
+  setStartNodeId: (nodeId) => set({ startNodeId: nodeId, isDirty: true }),
 
   markClean: () => set({ isDirty: false }),
 }));

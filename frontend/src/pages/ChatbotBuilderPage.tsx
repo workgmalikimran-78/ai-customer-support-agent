@@ -10,7 +10,7 @@ import { useFlowBuilderStore } from '@/features/bot-builder/store/flowBuilderSto
 import styles from './ChatbotBuilderPage.module.css';
 
 export default function ChatbotBuilderPage() {
-  const { isLoading, save, isSaving, publish, isPublishing } = useBotFlow();
+  const { isLoading, save, isSaving, publish, isPublishing, validationErrors } = useBotFlow();
   const { data: metrics } = useAnalyticsMetrics();
   const isDirty = useFlowBuilderStore((s) => s.isDirty);
 
@@ -58,6 +58,16 @@ export default function ChatbotBuilderPage() {
       )}
 
       <h2 className={styles.sectionTitle}>Bot Flow Designer</h2>
+      {validationErrors && validationErrors.length > 0 && (
+        <div className={styles.validationBanner}>
+          This flow can't be published yet:
+          <ul>
+            {validationErrors.map((error, index) => (
+              <li key={`${error.nodeId}-${index}`}>{error.message}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       {isLoading ? (
         <div className={styles.loading}>Loading flow…</div>
       ) : (

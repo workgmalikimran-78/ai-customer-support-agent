@@ -11,6 +11,7 @@ export function ApiCallNode({ data, selected }: NodeProps<FlowCanvasNode>) {
       label="API Call"
       config={data.config}
       selected={selected}
+      isStart={data.isStart}
     />
   );
 }

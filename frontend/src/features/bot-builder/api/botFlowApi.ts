@@ -51,3 +51,21 @@ export async function publishBotFlow(flow: BotFlow): Promise<BotFlow> {
   );
   return toBotFlow(data);
 }
+
+export interface FlowValidationError {
+  nodeId: string;
+  message: string;
+}
+
+export interface FlowValidationResult {
+  valid: boolean;
+  errors: FlowValidationError[];
+}
+
+export async function validateBotFlow(flow: BotFlow): Promise<FlowValidationResult> {
+  const { data } = await httpClient.post<FlowValidationResult>(
+    `/api/bot-flows/${flow.id ?? DEFAULT_FLOW_ID}/validate`,
+    toUpdateRequest(flow),
+  );
+  return data;
+}

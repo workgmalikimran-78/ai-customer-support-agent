@@ -35,8 +35,11 @@ function fromCsv(value: string): string[] {
 export function NodeConfigDrawer() {
   const selectedNodeId = useFlowBuilderStore((s) => s.selectedNodeId);
   const node = useFlowBuilderStore((s) => s.nodes.find((n) => n.id === s.selectedNodeId));
+  const isStartNode = useFlowBuilderStore((s) => s.startNodeId === s.selectedNodeId);
   const updateNodeConfig = useFlowBuilderStore((s) => s.updateNodeConfig);
   const setSelectedNodeId = useFlowBuilderStore((s) => s.setSelectedNodeId);
+  const setStartNodeId = useFlowBuilderStore((s) => s.setStartNodeId);
+  const removeNode = useFlowBuilderStore((s) => s.removeNode);
 
   if (!selectedNodeId || !node) return null;
 
@@ -63,6 +66,14 @@ export function NodeConfigDrawer() {
       </div>
 
       <div className={styles.body}>
+        {isStartNode ? (
+          <span className={styles.hint}>This is the flow's start node.</span>
+        ) : (
+          <Button variant="secondary" size="sm" onClick={() => setStartNodeId(node.id)}>
+            Set as start node
+          </Button>
+        )}
+
         <Input
           label="Label"
           value={config.label ?? ''}
@@ -154,6 +165,9 @@ export function NodeConfigDrawer() {
       <div className={styles.footer}>
         <Button variant="secondary" size="sm" onClick={() => setSelectedNodeId(null)}>
           Done
+        </Button>
+        <Button variant="danger" size="sm" onClick={() => removeNode(node.id)}>
+          Delete node
         </Button>
       </div>
     </div>

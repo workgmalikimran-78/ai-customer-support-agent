@@ -11,6 +11,7 @@ export function AiResponseNode({ data, selected }: NodeProps<FlowCanvasNode>) {
       label="AI Response"
       config={data.config}
       selected={selected}
+      isStart={data.isStart}
     />
   );
 }
