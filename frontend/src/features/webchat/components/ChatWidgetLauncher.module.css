@@ -1,0 +1,42 @@
+.dock {
+  position: fixed;
+  right: var(--space-6);
+  bottom: var(--space-6);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-4);
+}
+
+.panelWrapper {
+  width: 380px;
+  height: 560px;
+  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.launcher {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--gradient-accent);
+  color: #fff;
+  font-size: 22px;
+  box-shadow: var(--shadow-accent-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.launcher:hover {
+  filter: brightness(1.08);
+}
+
+@media (max-width: 480px) {
+  .panelWrapper {
+    width: calc(100vw - var(--space-6) * 2);
+  }
+}

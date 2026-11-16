@@ -1,4 +1,5 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { ChatWidgetLauncher } from '@/features/webchat/components/ChatWidgetLauncher';
 import { useCustomerAuthStore } from '@/store/customerAuthStore';
 import styles from './ShopLayout.module.css';
 
@@ -23,7 +24,6 @@ export function ShopLayout() {
           {isAuthenticated ? (
             <>
               <Link to="/shop/orders">My Orders</Link>
-              <Link to="/widget">Chat with us</Link>
               <span className={styles.customerName}>{customer.name}</span>
               <button type="button" className={styles.logoutButton} onClick={handleLogout}>
                 Logout
@@ -40,6 +40,9 @@ export function ShopLayout() {
       <main className={styles.content}>
         <Outlet />
       </main>
+      {/* Available to anonymous shoppers too, not just logged-in customers -- that's the
+          whole point of letting visitors chat with support before creating an account. */}
+      <ChatWidgetLauncher />
     </div>
   );
 }
