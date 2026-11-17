@@ -22,11 +22,16 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class AiServiceClientImpl implements AiServiceClient {
 
-    // The support agent is a ReAct loop that can chain multiple tool calls (e.g. a RAG
-    // lookup followed by a final generation), each a full Claude round-trip -- 30s was
-    // occasionally too tight for that, surfacing as "Timeout on blocking read" even on
-    // requests that were just slow, not actually stuck.
-    private static final Duration TIMEOUT = Duration.ofSeconds(60);
+    // /v1/chat now runs a classify step plus a specialist ReAct loop that can chain
+    // multiple tool calls (e.g. a RAG lookup followed by a final generation) -- each
+    // step is a full Claude round-trip, so this needs real headroom or requests that
+    // are just slow (not stuck) surface as timeouts.
+    //
+    // This MUST stay equal to (or larger than) the Netty-level responseTimeout set on
+    // the WebClient's HttpClient in AiServiceClientConfig -- that one fires first and
+    // silently makes this value a no-op if it's shorter, which is exactly what
+    // happened when this was 60s here but 30s there.
+    private static final Duration TIMEOUT = Duration.ofSeconds(90);
 
     private final WebClient aiServiceWebClient;
 

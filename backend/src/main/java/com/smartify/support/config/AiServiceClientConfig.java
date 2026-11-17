@@ -17,8 +17,11 @@ public class AiServiceClientConfig {
             @Value("${ai-service.base-url:http://localhost:8000}") String baseUrl,
             @Value("${ai-service.api-key:}") String apiKey) {
 
+        // Must stay equal to (or larger than) AiServiceClientImpl's TIMEOUT -- this
+        // Netty-level timeout fires first on the connection itself, so a shorter value
+        // here silently overrides that one regardless of what it's set to.
         HttpClient httpClient = HttpClient.create()
-                .responseTimeout(Duration.ofSeconds(30));
+                .responseTimeout(Duration.ofSeconds(90));
 
         return WebClient.builder()
                 .baseUrl(baseUrl)
