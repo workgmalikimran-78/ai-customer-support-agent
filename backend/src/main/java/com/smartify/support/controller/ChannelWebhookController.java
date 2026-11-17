@@ -5,6 +5,7 @@ import com.smartify.support.service.ChannelIngestionService;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,7 +38,17 @@ public class ChannelWebhookController {
             @Parameter(description = "HMAC-SHA256 of the raw request body, hex-encoded and "
                     + "prefixed \"sha256=\", keyed by WEBHOOK_SHARED_SECRET.", required = true)
             @RequestHeader("X-Webhook-Signature") String signature) {
-        channelIngestionService.ingest(channel, payload);
+        ingestWithRetry(channel, payload);
         return ResponseEntity.accepted().build();
+    }
+
+    /** See WebChatController.ingestWithRetry for why this retry exists -- providers can also
+     * redeliver the same webhook concurrently, hitting the same contact-insert race. */
+    private void ingestWithRetry(String channel, WebhookPayload payload) {
+        try {
+            channelIngestionService.ingest(channel, payload);
+        } catch (DataIntegrityViolationException e) {
+            channelIngestionService.ingest(channel, payload);
+        }
     }
 }
