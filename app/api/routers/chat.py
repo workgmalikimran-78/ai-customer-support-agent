@@ -1,4 +1,5 @@
 """POST /v1/chat router."""
+
 from fastapi import APIRouter, Depends
 
 from app.agents.support_agent import generate_reply
@@ -32,8 +33,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
     return ChatResponse(
         reply=result["reply"],
-        intent=None,
-        confidence=None,
+        intent=result.get("intent"),
+        confidence=result.get("confidence"),
         nextNodeId=next_node_id,
         toolCalls=result.get("toolCalls"),
         shouldEscalate=bool(result.get("shouldEscalate", False)),

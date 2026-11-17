@@ -3,8 +3,15 @@
 Calls the support agent with RAG grounding, using the node's
 `promptTemplate` as additional guidance/context injected into the agent
 call alongside the latest incoming message.
+
+Uses generate_single_agent_reply() rather than generate_reply() -- the
+latter runs its own intent classification and specialist routing, which
+would be redundant (and could override the flow author's intent) here,
+since the visual flow itself already routed via its own Intent
+Classification node before reaching this one.
 """
-from app.agents.support_agent import generate_reply
+
+from app.agents.support_agent import generate_single_agent_reply
 from app.rag.retriever import query as rag_query
 from app.workflows.flow_schema import FlowNode
 from app.workflows.node_handlers.base import HandlerContext, HandlerResult, empty_output
@@ -31,9 +38,11 @@ def handle(node: FlowNode, ctx: HandlerContext) -> HandlerResult:
         except (KeyError, IndexError):
             prompt_prefix = config.promptTemplate
 
-    full_message = f"{prompt_prefix}\n\nCustomer: {message}" if prompt_prefix else message
+    full_message = (
+        f"{prompt_prefix}\n\nCustomer: {message}" if prompt_prefix else message
+    )
 
-    agent_result = generate_reply(
+    agent_result = generate_single_agent_reply(
         message=full_message,
         history=[],
         bot_id=bot_id,
@@ -43,7 +52,9 @@ def handle(node: FlowNode, ctx: HandlerContext) -> HandlerResult:
     output = empty_output()
     output["text"] = agent_result["reply"]
 
-    return HandlerResult(output=output, escalate=agent_result.get("shouldEscalate", False))
+    return HandlerResult(
+        output=output, escalate=agent_result.get("shouldEscalate", False)
+    )
 
 
 def _safe_format(template: str) -> bool:
