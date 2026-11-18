@@ -1,0 +1,23 @@
+.previewWrap {
+  position: relative;
+  height: 320px;
+  background: var(--color-bg-alt);
+  overflow: hidden;
+}
+
+.previewWrap :global(.react-flow__attribution) {
+  display: none;
+}
+
+.previewWrap :global(.react-flow__controls) {
+  display: none;
+}
+
+.loading {
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}

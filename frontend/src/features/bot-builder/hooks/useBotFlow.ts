@@ -19,7 +19,12 @@ export class FlowValidationFailedError extends Error {
   }
 }
 
-function toCanvasNodes(nodes: BotFlowNode[]): FlowCanvasNode[] {
+/** Exported so BotFlowPreview (a read-only dashboard widget) can convert the
+ * wire format itself without going through useBotFlow/the shared editable
+ * zustand store -- loading into that store would either show a blank canvas
+ * (never hydrated) or, if the real builder has unsaved edits open, re-fetch
+ * and clobber them the moment this hook mounted somewhere else. */
+export function toCanvasNodes(nodes: BotFlowNode[]): FlowCanvasNode[] {
   return nodes.map((node) => ({
     id: node.id,
     type: node.type,
@@ -34,7 +39,7 @@ function conditionLabel(condition?: Record<string, unknown>): string | undefined
   return key ? `${key}: ${String(value)}` : undefined;
 }
 
-function toCanvasEdges(edges: BotFlowEdge[]): FlowCanvasEdge[] {
+export function toCanvasEdges(edges: BotFlowEdge[]): FlowCanvasEdge[] {
   return edges.map((edge) => ({
     id: edge.id,
     source: edge.source,

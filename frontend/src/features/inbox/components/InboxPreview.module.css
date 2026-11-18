@@ -1,0 +1,83 @@
+.wrap {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  height: 320px;
+  /* Safety net: if any child below still overflows its box for some other
+     reason, clip it here rather than letting it visually bleed into
+     whatever card sits below this one on the page. */
+  overflow: hidden;
+}
+
+.list {
+  border-right: 1px solid var(--color-border);
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.searchRow {
+  padding: var(--space-3);
+}
+
+.thread {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  /* Without this, a flex child's default min-height:auto lets .threadScroll
+     grow to fit a long message instead of scrolling within the 320px box --
+     this is what let the thread spill into the card below. */
+  min-height: 0;
+}
+
+.threadScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.composer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.composerInput {
+  flex: 1;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  font-size: 13px;
+  padding: var(--space-2) var(--space-4);
+  outline: none;
+}
+
+.composerInput:focus {
+  border-color: var(--color-accent);
+}
+
+.attachButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  flex-shrink: 0;
+}
+
+.attachButton:hover {
+  color: var(--color-text);
+}
+
+.emptyNote {
+  padding: var(--space-4);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-align: center;
+}
